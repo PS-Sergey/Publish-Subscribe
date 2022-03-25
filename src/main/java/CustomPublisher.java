@@ -1,28 +1,26 @@
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class CustomPublisher implements Flow.Publisher<Integer> {
 
-    final ExecutorService executor = Executors.newFixedThreadPool(4);
-    private CopyOnWriteArrayList<Integer> listValues;
-    private List subscriptions = Collections.synchronizedList(new ArrayList());
+    private List<Integer> listValues = Collections.synchronizedList(new ArrayList());
+    private List<Flow.Subscription> subscriptions = Collections.synchronizedList(new ArrayList());
 
-    public CustomPublisher(List<Integer> values) {
-        listValues = new CopyOnWriteArrayList<Integer>(values);
+    public void addValue(Integer value) {
+        synchronized (listValues) {
+            listValues.add(value);
+        }
     }
 
     @Override
     public void subscribe(Flow.Subscriber subscriber) {
-        CustomSubscription subscription = new CustomSubscription(subscriber, executor, listValues.iterator());
+        CustomSubscription subscription = new CustomSubscription(subscriber);
         subscriptions.add(subscription);
-        executor.execute(() -> subscriber.onSubscribe(subscription));
+        new Thread(() -> subscriber.onSubscribe(subscription)).start();
     }
 
 
@@ -30,14 +28,12 @@ public class CustomPublisher implements Flow.Publisher<Integer> {
 
         private Flow.Subscriber<Integer> subscriber;
         private AtomicBoolean isCanceled;
-        private Iterator<Integer> iterator;
-        private ExecutorService executor;
+        private AtomicInteger numberItem;
 
-        public CustomSubscription(Flow.Subscriber<Integer> subscriber, ExecutorService executor, Iterator<Integer> iterator) {
+        public CustomSubscription(Flow.Subscriber<Integer> subscriber) {
             this.subscriber = subscriber;
-            this.executor = executor;
-            this.iterator = iterator;
             isCanceled = new AtomicBoolean(false);
+            numberItem = new AtomicInteger(0);
         }
 
         @Override
@@ -46,15 +42,16 @@ public class CustomPublisher implements Flow.Publisher<Integer> {
                 return;
             }
             if (n <= 0) {
-                executor.execute(() -> subscriber.onError(new IllegalArgumentException()));
+                subscriber.onError(new IllegalArgumentException());
             }
-            for (long i = n; iterator.hasNext() && !isCanceled.get() && i > 0; i--) {
-                executor.execute(() -> subscriber.onNext(iterator.next()));
-            }
-            if (!iterator.hasNext() && !isCanceled.get()) {
-                subscriber.onComplete();
-                isCanceled.set(true);
-                cancel();
+            synchronized (listValues) {
+                if (numberItem.get() >= listValues.size()) {
+                    subscriber.onComplete();
+                    cancel();
+                }
+                for (long i = 0; i < n && !isCanceled.get() && numberItem.get() < listValues.size(); i++) {
+                    new Thread(() -> subscriber.onNext(listValues.get(numberItem.getAndIncrement()))).start();
+                }
             }
         }
 
@@ -63,9 +60,6 @@ public class CustomPublisher implements Flow.Publisher<Integer> {
             isCanceled.set(true);
             synchronized (subscriptions) {
                 subscriptions.remove(this);
-                if (subscriptions.size() == 0) {
-                    executor.shutdown();
-                }
             }
         }
 
