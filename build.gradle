@@ -4,17 +4,12 @@ plugins {
 
 group 'org.polyakov.project'
 version '1.0-SNAPSHOT'
-sourceCompatibility = JavaVersion.VERSION_11
 
 repositories {
     mavenCentral()
 }
 
 dependencies {
-    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.1'
-    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.1'
-}
-
-test {
-    useJUnitPlatform()
+    implementation platform('io.projectreactor:reactor-bom:2020.0.17')
+    implementation 'io.projectreactor:reactor-core'
 }

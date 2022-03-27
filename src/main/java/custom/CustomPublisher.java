@@ -1,3 +1,5 @@
+package custom;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -7,8 +9,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class CustomPublisher implements Flow.Publisher<Integer> {
 
-    private List<Integer> listValues = Collections.synchronizedList(new ArrayList());
-    private List<Flow.Subscription> subscriptions = Collections.synchronizedList(new ArrayList());
+    private List<Integer> listValues = Collections.synchronizedList(new ArrayList<Integer>());
+    private List<Flow.Subscription> subscriptions = Collections.synchronizedList(new ArrayList<Flow.Subscription>());
 
     public void addValue(Integer value) {
         synchronized (listValues) {
@@ -20,7 +22,7 @@ public class CustomPublisher implements Flow.Publisher<Integer> {
     public void subscribe(Flow.Subscriber subscriber) {
         CustomSubscription subscription = new CustomSubscription(subscriber);
         subscriptions.add(subscription);
-        new Thread(() -> subscriber.onSubscribe(subscription)).start();
+        subscriber.onSubscribe(subscription);
     }
 
 
@@ -50,7 +52,7 @@ public class CustomPublisher implements Flow.Publisher<Integer> {
                     cancel();
                 }
                 for (long i = 0; i < n && !isCanceled.get() && numberItem.get() < listValues.size(); i++) {
-                    new Thread(() -> subscriber.onNext(listValues.get(numberItem.getAndIncrement()))).start();
+                    subscriber.onNext(listValues.get(numberItem.getAndIncrement()));
                 }
             }
         }

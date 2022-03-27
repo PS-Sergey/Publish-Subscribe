@@ -1,17 +1,31 @@
-import java.util.ArrayList;
+import custom.CustomPublisher;
+import custom.CustomSubscriber;
+import reactor.ReactorSubscriber;
+import reactor.core.publisher.Flux;
 
 public class Application {
-    public static void main(String[] args) throws InterruptedException {
+    public static void main(String[] args) {
+        runCustomImpl();
+        runReactorImpl();
+    }
+
+    /**
+     * Реализация паттерна Publish-Subscribe с использованием Java Flow API.
+     */
+    public static void runCustomImpl() {
         CustomPublisher publisher = new CustomPublisher();
         for (int i = 0; i < 5; i++) {
             publisher.addValue(i);
         }
-        CustomSubscriber subscriber1 = new CustomSubscriber("First subs");
-        CustomSubscriber subscriber2 = new CustomSubscriber("Second subs");
-        publisher.subscribe(subscriber1);
-        publisher.subscribe(subscriber2);
-        for (int i = 0; i < 5; i++) {
-            publisher.addValue(5 + i);
-        }
+        CustomSubscriber subscriber = new CustomSubscriber("Custom subscriber");;
+        publisher.subscribe(subscriber);
+    }
+
+    /**
+     * Реализация паттерна Publish-Subscribe с использованием Project Reactor.
+     */
+    public static void runReactorImpl() {
+        ReactorSubscriber subscriber = new ReactorSubscriber("Reactor subscriber");
+        Flux.range(1,5).subscribe(subscriber);
     }
 }

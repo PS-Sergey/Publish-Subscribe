@@ -1,8 +1,10 @@
+package custom;
+
 import java.util.concurrent.Flow;
 
 public class CustomSubscriber implements Flow.Subscriber<Integer> {
 
-    private Flow.Subscription subscription;
+    private volatile Flow.Subscription subscription;
     private String name;
 
     public CustomSubscriber(String name) {
