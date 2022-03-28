@@ -9,8 +9,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class CustomPublisher implements Flow.Publisher<Integer> {
 
-    private List<Integer> listValues = Collections.synchronizedList(new ArrayList<Integer>());
-    private List<Flow.Subscription> subscriptions = Collections.synchronizedList(new ArrayList<Flow.Subscription>());
+    private List<Integer> listValues = Collections.synchronizedList(new ArrayList<>());
+    private List<Flow.Subscription> subscriptions = Collections.synchronizedList(new ArrayList<>());
 
     public void addValue(Integer value) {
         synchronized (listValues) {
