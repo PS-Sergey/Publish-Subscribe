@@ -60,9 +60,7 @@ public class CustomPublisher implements Flow.Publisher<Integer> {
         @Override
         public void cancel() {
             isCanceled.set(true);
-            synchronized (subscriptions) {
-                subscriptions.remove(this);
-            }
+            subscriptions.remove(this);
         }
 
     }
